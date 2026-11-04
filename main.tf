@@ -63,7 +63,7 @@ resource "aws_subnet" "database" {
   availability_zone = local.az_names[count.index]
 
   tags = merge(
-    var.private_subnet_tags,
+    var.database_subnet_tags,
     local.common_tags,
     {
         Name = "${local.common_name_suffix}-database-${local.az_names[count.index]}" # roboshop-dev-database-us-east-1a
@@ -157,8 +157,20 @@ resource "aws_route" "database" {
   nat_gateway_id = aws_nat_gateway.nat.id
 }
 
+resource "aws_route_table_association" "public" {
+  count = length(var.public_subnet_cidrs)
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
 resource "aws_route_table_association" "private" {
-  count = length(var.private.sub)
+  count = length(var.private_subnet_cidrs)
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.example.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "database" {
+  count = length(var.database_subnet_cidrs)
+  subnet_id      = aws_subnet.database[count.index].id
+  route_table_id = aws_route_table.database.id
 }
